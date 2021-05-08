@@ -9,7 +9,7 @@ builds:
     env:
       - CGO_ENABLED=0
     ldflags:
-      - '-s -w -X github.com/shiroi-usagi/burner.version={{.Version}} -X github.com/shiroi-usagi/burner.buildDate={{.Date}} -X github.com/shiroi-usagi/burner.builtBy=goreleaser'
+      - '-s -w -X github.com/shiroi-usagi/burner.version={{.Tag}} -X github.com/shiroi-usagi/burner.buildDate={{.Date}} -X github.com/shiroi-usagi/burner.builtBy=goreleaser'
     goos:
       - linux
       - darwin

@@ -10,7 +10,6 @@ import (
 	"github.com/shiroi-usagi/burner/ffmpeg"
 	"github.com/shiroi-usagi/pkg/command"
 	"golang.org/x/mod/semver"
-	"log"
 	"net/http"
 	"os"
 	"os/exec"
@@ -57,8 +56,10 @@ Possible values:
 	inputDir  = Cmd.Flag.String("input", "./in", "directory of the input files")
 	outputDir = Cmd.Flag.String("output", "./out", "directory of the output files")
 
-	videoHeight      = Cmd.Flag.Int("v-height", 720, "target video height")
-	videoBitrate     = Cmd.Flag.String("v-bitrate", "1371k", "target video bitrate")
+	ignoreFontError = Cmd.Flag.Bool("ignore-font-error", false, "skip font errors during encode")
+
+	videoHeight      = Cmd.Flag.Int("v-height", burner.DefaultHeight, "target video height")
+	videoBitrate     = Cmd.Flag.String("v-bitrate", burner.DefaultBitrate, "target video bitrate")
 	videoKeepBitrate = Cmd.Flag.Bool("v-keep-bitrate", false, "disables bitrate modification when the original file size smaller than the expected")
 	videoUpscaling   = Cmd.Flag.Bool("v-upscaling", false, "enable/disable upscaling")
 )
@@ -66,33 +67,33 @@ Possible values:
 func run(_ *command.Subcommand, _ []string) {
 	absIn, err := filepath.Abs(*inputDir)
 	if err != nil {
-		log.Fatal("Could not create absolute representation of input folder")
+		fmt.Println("Could not create absolute representation of input folder")
 	}
 	absOut, err := filepath.Abs(*outputDir)
 	if err != nil {
-		log.Fatal("Could not create absolute representation of output folder")
+		fmt.Println("Could not create absolute representation of output folder")
 	}
 	ffmpegExecutable, err := exec.LookPath("ffmpeg")
 	if err != nil {
-		log.Println("ffmpeg is not found in path")
+		fmt.Println("ffmpeg is not found in path, will try fallback")
 		ffmpegExecutable, err = ffmpeg.ExecutableFallback("ffmpeg")
 		if err != nil {
-			log.Fatal(err)
+			fmt.Println(err)
 		}
 	}
 	ffprobeExecutable, err := exec.LookPath("ffprobe")
 	if err != nil {
-		log.Println("ffprobe is not found in path")
+		fmt.Println("ffprobe is not found in path, will try fallback")
 		ffprobeExecutable, err = ffmpeg.ExecutableFallback("ffprobe")
 		if err != nil {
-			log.Fatal(err)
+			fmt.Println(err)
 		}
 	}
 	currentV := burner.GetVersionInfo().Version
 	fmt.Println(fmt.Sprintf("Current version: `%s`", currentV))
 	latestV, err := latestVersion()
 	if err != nil {
-		log.Print("Latest version: Unknown")
+		fmt.Println("Latest version: Unknown")
 	} else {
 		fmt.Println(fmt.Sprintf("Latest version: `%s`", latestV))
 		if devVersion != currentV && semver.Compare(latestV, currentV) > 0 {
@@ -119,6 +120,8 @@ func run(_ *command.Subcommand, _ []string) {
 		OutputDir:   absOut,
 		FFmpegPath:  ffmpegExecutable,
 		FFprobePath: ffprobeExecutable,
+
+		IgnoreFontError: *ignoreFontError,
 
 		Video: burner.VideoConf{
 			Height:      *videoHeight,

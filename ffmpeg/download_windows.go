@@ -15,7 +15,7 @@ import (
 
 const (
 	releaseFolder = "ffmpeg-4.3.1-2020-11-19-essentials_build"
-	releaseRawurl = "https://github.com/GyanD/codexffmpeg/releases/download/4.3.1-2020-11-19/ffmpeg-4.3.1-2020-11-19-essentials_build.zip"
+	releaseRawurl = "https://github.com/GyanD/codexffmpeg/releases/download/4.4/ffmpeg-4.4-essentials_build.zip"
 )
 
 func knownBinary(file string) bool {

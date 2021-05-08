@@ -17,6 +17,9 @@ import (
 )
 
 var (
+	DefaultHeight  = 720
+	DefaultBitrate = "1371k"
+
 	// supportedInputExt filters the files from the input directory
 	supportedInputExt = []string{".mkv", ".mp4", ".avs"}
 )
@@ -39,6 +42,8 @@ type Config struct {
 	FFprobePath string
 
 	Video VideoConf
+
+	IgnoreFontError bool
 }
 
 func Burn(conf Config) {
@@ -87,7 +92,7 @@ func burn(cmdOut *modifiableOutput, file string, factory factoryFunc, conf Confi
 	// Avoid dealing with escaping characters in complex filter
 	slink := filepath.Join(conf.OutputDir, "tmp"+filepath.Ext(file))
 	_ = os.Remove(slink)
-	err := os.Symlink(file, slink)
+	err := os.Link(file, slink)
 	if err != nil {
 		return err
 	}
@@ -125,11 +130,11 @@ func burn(cmdOut *modifiableOutput, file string, factory factoryFunc, conf Confi
 		_ = os.Remove(filepath.Join(t.OutDir(), "ffmpeg2pass-0.log"))
 		_ = os.Remove(filepath.Join(t.OutDir(), "ffmpeg2pass-0.log.mbtree"))
 	}()
-	if err := RunCommand(cmdOut, t.FirstPass(), conf.Verbose); err != nil {
+	if err := runCommand(cmdOut, t.FirstPass(), conf); err != nil {
 		return err
 	}
 
-	if err := RunCommand(cmdOut, t.SecondPass(), conf.Verbose); err != nil {
+	if err := runCommand(cmdOut, t.SecondPass(), conf); err != nil {
 		return err
 	}
 
@@ -140,16 +145,16 @@ func calcExpectedSize(duration float64, bitrate int64) float64 {
 	return (float64(bitrate) + 128) * duration / 8 * 1024
 }
 
-// RunCommand runs the given command while writing the output to console.
+// runCommand runs the given command while writing the output to console.
 //
 // The verbose argument makes the output more talkative.
-func RunCommand(out io.Writer, cmd *exec.Cmd, verbose bool) error {
+func runCommand(out io.Writer, cmd *exec.Cmd, conf Config) error {
 	// For some reason FFmpeg writes to stderr
 	e, err := cmd.StderrPipe()
 	if err != nil {
 		return err
 	}
-	if verbose {
+	if conf.Verbose {
 		fmt.Println(cmd)
 	}
 	if err := cmd.Start(); err != nil {
@@ -160,11 +165,13 @@ func RunCommand(out io.Writer, cmd *exec.Cmd, verbose bool) error {
 	scanner.Split(ScanLineAndCarriageReturn)
 	cbuf := ring.New(5)
 	h := ffmpeg.StatusPrinter()
-	if verbose {
+	if conf.Verbose {
 		h = ffmpeg.Printer()
 	}
-	h = ffmpeg.KillOnReplacedMissingFontLine(h)
-	h = ffmpeg.KillOnGlyphNotFoundLine(h)
+	if !conf.IgnoreFontError {
+		h = ffmpeg.KillOnReplacedMissingFontLine(h)
+		h = ffmpeg.KillOnGlyphNotFoundLine(h)
+	}
 	h = ffmpeg.KillOnNotOverwritingLine(h)
 	for scanner.Scan() {
 		m := scanner.Text()
