@@ -1,8 +1,5 @@
 # Burner
 
-[![pipeline status](https://github.com/shiroi-usagi/burner/badges/master/pipeline.svg)](https://github.com/shiroi-usagi/burner/commits/master)
-[![coverage report](https://github.com/shiroi-usagi/burner/badges/master/coverage.svg)](https://github.com/shiroi-usagi/burner/commits/master)
-
 ## Flags
 
 | flag              | values                            | default value  | description                   |
