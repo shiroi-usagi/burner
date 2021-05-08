@@ -1,0 +1,2 @@
+burner.exe burn
+pause

@@ -1,0 +1,36 @@
+project_name: burner
+
+release:
+ github:
+   owner: shiroi-usagi
+   name: burner
+builds:
+  - main: ./cmd/burner/main.go
+    env:
+      - CGO_ENABLED=0
+    ldflags:
+      - '-s -w -X github.com/shiroi-usagi/burner.version={{.Version}} -X github.com/shiroi-usagi/burner.buildDate={{.Date}} -X github.com/shiroi-usagi/burner.builtBy=goreleaser'
+    goos:
+      - linux
+      - darwin
+      - windows
+    goarch:
+      - amd64
+archives:
+  - replacements:
+      windows: Windows
+      amd64: x86_64
+    files:
+      - LICENSE
+      - README.md
+      - '*.bat'
+    format: 'zip'
+checksum:
+  name_template: 'checksums.txt'
+changelog:
+  sort: asc
+  filters:
+    exclude:
+      - '^docs:'
+      - '^test:'
+      - '^non-feature:'
