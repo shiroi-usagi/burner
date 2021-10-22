@@ -10,12 +10,13 @@ import (
 	"os"
 	"path"
 	"path/filepath"
+	"strings"
 	"time"
 )
 
-const (
-	releaseFolder = "ffmpeg-4.3.1-2020-11-19-essentials_build"
+var (
 	releaseRawurl = "https://github.com/GyanD/codexffmpeg/releases/download/4.4/ffmpeg-4.4-essentials_build.zip"
+	releaseFolder = strings.TrimSuffix(path.Base(releaseRawurl), ".zip")
 )
 
 func knownBinary(file string) bool {
