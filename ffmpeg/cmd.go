@@ -9,16 +9,6 @@ import (
 	"strings"
 )
 
-const commandlineStatusPrefix = "frame="
-
-func StatusPrinter() (h commandline.Handler) {
-	return commandline.HandlerFunc(func(r commandline.Response, l string) {
-		if strings.HasPrefix(l, commandlineStatusPrefix) {
-			fmt.Fprint(r.Stdout, l+"\r")
-		}
-	})
-}
-
 func Printer() commandline.Handler {
 	return commandline.HandlerFunc(func(r commandline.Response, l string) {
 		fmt.Fprint(r.Stdout, l)

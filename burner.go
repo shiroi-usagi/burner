@@ -3,7 +3,6 @@ package burner
 import (
 	"bufio"
 	"bytes"
-	"container/ring"
 	"fmt"
 	"github.com/shiroi-usagi/burner/commandline"
 	"github.com/shiroi-usagi/burner/ffmpeg"
@@ -14,6 +13,8 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"strings"
+	"sync"
 )
 
 var (
@@ -149,8 +150,11 @@ func calcExpectedSize(duration float64, bitrate int64) float64 {
 //
 // The verbose argument makes the output more talkative.
 func runCommand(out io.Writer, cmd *exec.Cmd, conf Config) error {
-	// For some reason FFmpeg writes to stderr
-	e, err := cmd.StderrPipe()
+	stderr, err := cmd.StderrPipe()
+	if err != nil {
+		return err
+	}
+	stdout, err := cmd.StdoutPipe()
 	if err != nil {
 		return err
 	}
@@ -161,72 +165,61 @@ func runCommand(out io.Writer, cmd *exec.Cmd, conf Config) error {
 		return err
 	}
 
-	scanner := bufio.NewScanner(e)
-	scanner.Split(ScanLineAndCarriageReturn)
-	cbuf := ring.New(5)
-	h := ffmpeg.StatusPrinter()
-	if conf.Verbose {
-		h = ffmpeg.Printer()
-	}
-	if !conf.IgnoreFontError {
-		h = ffmpeg.KillOnReplacedMissingFontLine(h)
-		h = ffmpeg.KillOnGlyphNotFoundLine(h)
-	}
-	h = ffmpeg.KillOnNotOverwritingLine(h)
-	for scanner.Scan() {
-		m := scanner.Text()
-		cbuf.Value = m
-		cbuf = cbuf.Next()
-		h.Handle(commandline.Response{Signaller: cmd.Process, Stdout: out}, m)
-	}
-
-	err = cmd.Wait()
-	if err != nil && cmd.ProcessState.Exited() {
-		cbuf.Do(func(i interface{}) {
-			if i != nil {
-				fmt.Println(fmt.Sprintf("%s", i))
+	var wg sync.WaitGroup
+	wg.Add(2)
+	go func() {
+		defer wg.Done()
+		s := bufio.NewScanner(stdout)
+		var sb strings.Builder
+		var i uint8
+		for s.Scan() {
+			line := s.Text()
+			if strings.HasPrefix(line, "progress=") {
+				// stats_period flag not available in all versions
+				if i == 0 {
+					fmt.Println(sb.String())
+				}
+				i = (i + 1) % 4 // default stats_period is 0.5 seconds, we only need info every 2 seconds
+				sb.Reset()
+				// The last key of a sequence of progress information is always "progress".
+				continue
 			}
-		})
-	}
-	return err
-}
+			if conf.Verbose {
+				sb.WriteString(line)
+				sb.WriteString(" ")
+			} else {
+				switch {
+				default:
+					sb.WriteString(line)
+					sb.WriteString(" ")
+				case strings.HasPrefix(line, "stream_"),
+					strings.HasPrefix(line, "out_time_us="), strings.HasPrefix(line, "out_time_ms="),
+					strings.HasPrefix(line, "dup_frames="), strings.HasPrefix(line, "drop_frames="):
+					// ignore
+				}
+			}
+		}
+	}()
+	go func() {
+		defer wg.Done()
+		s := bufio.NewScanner(stderr)
+		h := ffmpeg.Printer()
+		if !conf.IgnoreFontError {
+			h = ffmpeg.KillOnReplacedMissingFontLine(h)
+			h = ffmpeg.KillOnGlyphNotFoundLine(h)
+		}
+		h = ffmpeg.KillOnNotOverwritingLine(h)
+		for s.Scan() {
+			line := s.Text()
+			h.Handle(commandline.Response{Signaller: cmd.Process, Stdout: out}, line)
+		}
+	}()
 
-// ScanLineAndCarriageReturn is a split function for a Scanner that returns
-// each line of text, stripped of any trailing end-of-line marker or carriage
-// return. The returned line may be empty. The end-of-line marker is one
-// optional carriage return followed by one mandatory newline. In regular
-// expression notation, it is `(\r|\r?\n)`. The last non-empty line of input
-// will be returned even if it has no newline.
-//
-// Carriage return is used when a command overrides a single line of output.
-func ScanLineAndCarriageReturn(data []byte, atEOF bool) (advance int, token []byte, err error) {
-	if atEOF && len(data) == 0 {
-		return 0, nil, nil
+	if err := cmd.Wait(); err != nil {
+		return err
 	}
-	if i := bytes.IndexByte(data, '\n'); i >= 0 {
-		// We have a full newline-terminated line.
-		return i + 1, dropCR(data[0:i]), nil
-	}
-	// If we're at EOF, we have a final, non-terminated line. Return it.
-	if atEOF {
-		return len(data), dropCR(data), nil
-	}
-	if i := bytes.IndexByte(data, '\r'); i >= 0 {
-		// We have a full newline-terminated line.
-		return i + 1, data[0:i], nil
-	}
-	// Request more data.
-	return 0, nil, nil
-}
-
-// dropCR drops a terminal \r from the data.
-//
-// Borrowed from bufio/scan
-func dropCR(data []byte) []byte {
-	if len(data) > 0 && data[len(data)-1] == '\r' {
-		return data[0 : len(data)-1]
-	}
-	return data
+	wg.Wait()
+	return nil
 }
 
 // modifiableOutput is an io.Writer which can detect carriage return

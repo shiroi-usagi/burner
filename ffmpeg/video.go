@@ -380,9 +380,11 @@ func (t *Transcoder) Duration(d time.Duration) {
 
 func (t Transcoder) FirstPass() *exec.Cmd {
 	var args []string
-	args = append(args, "-y")          // Overwrite output files without asking.
-	args = append(args, "-i", t.input) // Input file url
-	args = append(args, "-pass", "1")  // Select the pass number 1
+	args = append(args, "-y")                          // Overwrite output files without asking.
+	args = append(args, "-loglevel", "repeat+warning") // Show all warnings and errors.
+	args = append(args, "-progress", "pipe:1")         // Send program-friendly progress information to stdout.
+	args = append(args, "-i", t.input)                 // Input file url.
+	args = append(args, "-pass", "1")                  // Select the pass number 1.
 	for _, option := range t.options {
 		if !option.firstPass {
 			continue
@@ -393,9 +395,9 @@ func (t Transcoder) FirstPass() *exec.Cmd {
 			args = append(args, option.flag, option.value)
 		}
 	}
-	args = append(args, "-an")       // Skip inclusion of audio
-	args = append(args, "-f", "mp4") // Force output file format
-	args = append(args, os.DevNull)  // Set output to null
+	args = append(args, "-an")       // Skip inclusion of audio.
+	args = append(args, "-f", "mp4") // Force output file format.
+	args = append(args, os.DevNull)  // Set output to null.
 	cmd := exec.Command(t.executable, args...)
 	cmd.Dir = t.outDir
 	return cmd
@@ -403,8 +405,10 @@ func (t Transcoder) FirstPass() *exec.Cmd {
 
 func (t Transcoder) SecondPass() *exec.Cmd {
 	var args []string
-	args = append(args, "-i", t.input) // Input file url
-	args = append(args, "-pass", "2")  // Select the pass number 1
+	args = append(args, "-loglevel", "repeat+warning") // Show all warnings and errors.
+	args = append(args, "-progress", "pipe:1")         // Send program-friendly progress information to stdout.
+	args = append(args, "-i", t.input)                 // Input file url
+	args = append(args, "-pass", "2")                  // Select the pass number 2
 	for _, option := range t.options {
 		if !option.secondPass {
 			continue
@@ -415,7 +419,7 @@ func (t Transcoder) SecondPass() *exec.Cmd {
 			args = append(args, option.flag, option.value)
 		}
 	}
-	args = append(args, t.outFile) // Set output to null
+	args = append(args, t.outFile) // Set output file.
 	cmd := exec.Command(t.executable, args...)
 	cmd.Dir = t.outDir
 	return cmd
