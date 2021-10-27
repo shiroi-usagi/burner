@@ -5,25 +5,20 @@ import (
 	"github.com/shiroi-usagi/burner/ziputil"
 	"log"
 	"os"
-	"path"
 	"path/filepath"
-	"strings"
 	"time"
 )
 
 var (
-	releaseRawurl = "https://github.com/GyanD/codexffmpeg/releases/download/4.4.1/ffmpeg-4.4.1-essentials_build.zip"
-	releaseFolder = strings.TrimSuffix(path.Base(releaseRawurl), ".zip")
+	releaseRawurl = "https://evermeet.cx/ffmpeg/%s-4.4.1.zip"
 )
 
-// ExecutableFallback downloads ffmpeg binaries for Windows from a trusted source.
-// The binaries are for ffmpeg, ffplay, and ffrpobe.
 func ExecutableFallback(file string) (string, error) {
 	if !knownBinary(file) {
 		return "", ErrUnknownBinary
 	}
 	binDir, _ := filepath.Abs(filepath.Join(".", "bin"))
-	executable := filepath.Join(binDir, "ffmpeg", releaseFolder, "bin", file+".exe")
+	executable := filepath.Join(binDir, "ffmpeg", file)
 	if _, err := os.Stat(executable); !os.IsNotExist(err) {
 		// already downloaded
 		return executable, nil
@@ -45,7 +40,7 @@ func ExecutableFallback(file string) (string, error) {
 			}
 		}
 	}()
-	if _, err := ziputil.UnzipAll(releaseRawurl, "./bin/ffmpeg"); err != nil {
+	if _, err := ziputil.UnzipAll(fmt.Sprintf(releaseRawurl, file), "./bin/ffmpeg"); err != nil {
 		return "", fmt.Errorf("could not unzip executable: %w", err)
 	}
 	return executable, nil
