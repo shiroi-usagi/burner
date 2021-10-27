@@ -25,7 +25,7 @@ type Handler interface {
 // is a Handler that calls f.
 type HandlerFunc func(Response, string)
 
-// ServeHTTP calls f(w, r).
+// Handle calls f(w, r).
 func (f HandlerFunc) Handle(r Response, l string) {
 	f(r, l)
 }
