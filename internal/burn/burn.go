@@ -2,13 +2,11 @@ package burn
 
 import (
 	"bufio"
-	"bytes"
 	"encoding/json"
-	"flag"
 	"fmt"
 	"github.com/shiroi-usagi/burner"
 	"github.com/shiroi-usagi/burner/ffmpeg"
-	"github.com/shiroi-usagi/pkg/command"
+	"github.com/spf13/cobra"
 	"golang.org/x/mod/semver"
 	"net/http"
 	"os"
@@ -18,53 +16,38 @@ import (
 	"time"
 )
 
-var Cmd = &command.Subcommand{
-	Name:      "burn",
-	Arguments: "[-v] [-mode m] [-input dir] [-output dir] [-ffmpeg path] [-v-height num] [-v-bitrate num] [-v-upscaling num]",
-	Short:     "transcode video",
+var Cmd = &cobra.Command{
+	Use:   "burn",
+	Short: "transcode video",
 	Long: `Transcode all files in the input folder and save
-the result to the output folder.
-`,
-	Flag: flag.NewFlagSet("", flag.ExitOnError),
+the result to the output folder.`,
 }
 
 func init() {
 	Cmd.Run = run // break init cycle
-
-	var buf bytes.Buffer
-	Cmd.Flag.SetOutput(&buf)
-	Cmd.Flag.PrintDefaults()
-	Cmd.Long += "\n"
-	Cmd.Long += buf.String()
 }
 
 var (
-	verbose = Cmd.Flag.Bool("v", false, "make output verbose")
+	verbose = Cmd.Flags().BoolP("verbose", "v", false, "make output verbose")
 
-	mode = Cmd.Flag.String("mode", "", `mode of the encoding
+	mode = Cmd.Flags().StringP("mode", "m", "", `mode of the encoding
+  smp4 - Sample MP4. Encodes a sample with the subtitle burned on the video. Creates hardsub.
+  fmp4 - Fragmented MP4. Encodes a fragmented video (HLS) with the subtitle burned on the video. Creates hardsub.
+  mp4 - MP4. Encodes a video with the subtitle burned on the video. Creates hardsub.
+  transcode - Transcode. Encodes a video with the given options while keeping the original settings. Creates softsub.`)
 
-Possible values:
- - smp4
-   Stands for Sample MP4. Encodes a sample with the subtitle burned on the video. Creates hardsub.
- - fmp4
-   Stands for Fragmented MP4. Encodes a fragmented video (HLS) with the subtitle burned on the video. Creates hardsub.
- - mp4
-   Stands for MP4. Encodes a video with the subtitle burned on the video. Creates hardsub.
- - transcode
-   Stands for Transcode. Encodes a video with the given options while keeping the original settings. Creates softsub.`)
+	inputDir  = Cmd.Flags().StringP("input", "i", "./in", "directory of the input files")
+	outputDir = Cmd.Flags().StringP("output", "o", "./out", "directory of the output files")
 
-	inputDir  = Cmd.Flag.String("input", "./in", "directory of the input files")
-	outputDir = Cmd.Flag.String("output", "./out", "directory of the output files")
+	ignoreFontError = Cmd.Flags().Bool("ignore-font-error", false, "skip font errors during encode")
 
-	ignoreFontError = Cmd.Flag.Bool("ignore-font-error", false, "skip font errors during encode")
-
-	videoHeight      = Cmd.Flag.Int("v-height", burner.DefaultHeight, "target video height")
-	videoBitrate     = Cmd.Flag.String("v-bitrate", burner.DefaultBitrate, "target video bitrate")
-	videoKeepBitrate = Cmd.Flag.Bool("v-keep-bitrate", false, "disables bitrate modification when the original file size smaller than the expected")
-	videoUpscaling   = Cmd.Flag.Bool("v-upscaling", false, "enable/disable upscaling")
+	videoHeight      = Cmd.Flags().Int("v-height", burner.DefaultHeight, "target video height")
+	videoBitrate     = Cmd.Flags().String("v-bitrate", burner.DefaultBitrate, "target video bitrate")
+	videoKeepBitrate = Cmd.Flags().Bool("v-keep-bitrate", false, "disables bitrate modification when the original file size smaller than the expected")
+	videoUpscaling   = Cmd.Flags().Bool("v-upscaling", false, "enable/disable upscaling")
 )
 
-func run(_ *command.Subcommand, _ []string) {
+func run(_ *cobra.Command, args []string) {
 	absIn, err := filepath.Abs(*inputDir)
 	if err != nil {
 		fmt.Println("Could not create absolute representation of input folder")

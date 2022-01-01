@@ -1,30 +1,29 @@
 package main
 
 import (
-	"flag"
-	"github.com/shiroi-usagi/burner/cmd/burner/internal/burn"
-	"github.com/shiroi-usagi/burner/cmd/burner/internal/prepare"
-	"github.com/shiroi-usagi/burner/cmd/burner/internal/version"
-	"github.com/shiroi-usagi/pkg/command"
+	"fmt"
+	"github.com/shiroi-usagi/burner/internal/burn"
+	"github.com/shiroi-usagi/burner/internal/prepare"
+	"github.com/shiroi-usagi/burner/internal/version"
+	"github.com/spf13/cobra"
 	"os"
 )
 
 func main() {
-	cmd := &command.Command{
-		Name:      "burner",
-		Arguments: "[arguments]",
-		Long:      `Burner is a tool for transcoding video.`,
-		Flag:      flag.CommandLine,
-		Commands: []*command.Subcommand{
-			burn.Cmd,
-			version.Cmd,
-			prepare.Cmd,
-		},
-		Run: command.BaseRun,
+	cmd := &cobra.Command{
+		Use:   "burner",
+		Short: "Burner is a tool for transcoding video.",
+
+		CompletionOptions: cobra.CompletionOptions{DisableDefaultCmd: true},
 	}
-	flag.Usage = func() {
-		cmd.Usage(os.Stdout)
+
+	cmd.AddCommand(
+		burn.Cmd,
+		version.Cmd,
+		prepare.Cmd,
+	)
+	if err := cmd.Execute(); err != nil {
+		fmt.Println(err)
+		os.Exit(1)
 	}
-	cmd.Flag.Parse(os.Args[1:])
-	cmd.Run(cmd, cmd.Flag.Args())
 }

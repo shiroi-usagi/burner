@@ -4,20 +4,19 @@
 
 ## Flags
 
-| flag                 | values                            | default value  | description                   |
-|----------------------|-----------------------------------|----------------|-------------------------------|
-| `-ignore-font-error` | boolean                           | `false`        | Ignore font errors.           |
-| `-input`             | string                            | `./in`         | Folder of the input files.    |
-| `-mode`              | `smp4`, `fmp4`, `mp4`, `transcode`| none*          | Name of the transcode preset. |
-| `-output`            | string                            | `./out`        | Folder of the output files.   |
-| `-v`                 | boolean                           | `false`        | Make output verbose.          |
-| `-v-bitrate`         | formatted bitrate                 | `1371k`        | Target video bitrate.         |
-| `-v-height`          | integer                           | `720`          | Target video height.          |
-| `-v-keep-bitrate`    | boolean                           | `false`        | Disable bitrate modification. |
-| `-v-upscaling`       | boolean                           | `false`        | Enable/disable upscaling.     |
+```
+      --ignore-font-error   skip font errors during encode
+  -i, --input string        directory of the input files (default "./in")
+  -m, --mode string         mode of the encoding
+                              smp4 - Sample MP4. Encodes a sample with the subtitle burned on the video. Creates hardsub.
+                              fmp4 - Fragmented MP4. Encodes a fragmented video (HLS) with the subtitle burned on the video. Creates hardsub.
+                              mp4 - MP4. Encodes a video with the subtitle burned on the video. Creates hardsub.
+                              transcode - Transcode. Encodes a video with the given options while keeping the original settings. Creates softsub.
+  -o, --output string       directory of the output files (default "./out")
+      --v-bitrate string    target video bitrate (default "1371k")
+      --v-height int        target video height (default 720)
+      --v-keep-bitrate      disables bitrate modification when the original file size smaller than the expected
+      --v-upscaling         enable/disable upscaling
+  -v, --verbose             make output verbose
+```
 
-> `*` If no value is set then the app will request it. _(Interactive CLI)_
-
-## Binaries
-
-On Windows if `ffmpeg` or `ffprobe` are not available on `PATH` the application will download the "essential" build from https://github.com/GyanD/codexffmpeg/releases/tag/4.4.
