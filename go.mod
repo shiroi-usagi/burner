@@ -1,6 +1,6 @@
 module github.com/shiroi-usagi/burner
 
-go 1.17
+go 1.19
 
 require (
 	github.com/jeffallen/seekinghttp v0.0.0-20171214161738-f41d11cb25b7
@@ -9,9 +9,6 @@ require (
 )
 
 require (
-	github.com/cpuguy83/go-md2man/v2 v2.0.1 // indirect
 	github.com/inconshreveable/mousetrap v1.0.0 // indirect
-	github.com/russross/blackfriday/v2 v2.1.0 // indirect
 	github.com/spf13/pflag v1.0.5 // indirect
-	gopkg.in/yaml.v2 v2.4.0 // indirect
 )
