@@ -17,7 +17,13 @@ func ExecutableFallback(file string) (string, error) {
 	if !knownBinary(file) {
 		return "", ErrUnknownBinary
 	}
-	binDir, _ := filepath.Abs(filepath.Join(".", "bin"))
+	root, err := os.Executable()
+	if err != nil {
+		root = "."
+	} else {
+		root = filepath.Dir(root)
+	}
+	binDir, _ := filepath.Abs(filepath.Join(root, "bin"))
 	executable := filepath.Join(binDir, "ffmpeg", file)
 	if _, err := os.Stat(executable); !os.IsNotExist(err) {
 		// already downloaded
@@ -40,7 +46,7 @@ func ExecutableFallback(file string) (string, error) {
 			}
 		}
 	}()
-	if _, err := ziputil.UnzipAll(fmt.Sprintf(releaseRawurl, file), "./bin/ffmpeg"); err != nil {
+	if _, err := ziputil.UnzipAll(fmt.Sprintf(releaseRawurl, file), filepath.Join(root, "bin", "ffmpeg")); err != nil {
 		return "", fmt.Errorf("could not unzip executable: %w", err)
 	}
 	return executable, nil
