@@ -10,7 +10,7 @@ import (
 )
 
 var (
-	releaseRawurl = "https://evermeet.cx/ffmpeg/%s-4.4.1.zip"
+	releaseRawurl = "https://evermeet.cx/ffmpeg/%s-7.1.1.zip"
 )
 
 func ExecutableFallback(file string) (string, error) {

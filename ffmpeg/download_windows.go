@@ -12,7 +12,7 @@ import (
 )
 
 var (
-	releaseRawurl = "https://github.com/GyanD/codexffmpeg/releases/download/4.4.1/ffmpeg-4.4.1-essentials_build.zip"
+	releaseRawurl = "https://github.com/GyanD/codexffmpeg/releases/download/7.1.1/ffmpeg-7.1.1-essentials_build.zip"
 	releaseFolder = strings.TrimSuffix(path.Base(releaseRawurl), ".zip")
 )
 
