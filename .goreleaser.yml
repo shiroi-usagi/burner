@@ -24,7 +24,7 @@ archives:
       - LICENSE
       - README.md
       - '*.bat'
-    format: 'zip'
+    formats: ['zip']
 checksum:
   name_template: 'checksums.txt'
 changelog:
